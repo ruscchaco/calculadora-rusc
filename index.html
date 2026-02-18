@@ -264,18 +264,18 @@ async function calcular() {
 /* ================= MENSAJE ================= */
 
 function generarMensaje(proyecto, horas, tarifa, usd, ars) {
-  return `Presupuesto RUSC
-Proyecto: ${proyecto}
-Horas: ${horas}
-Tarifa: USD ${tarifa}/h
-Total: USD ${usd.toFixed(2)}
-Total ARS: $${ars.toLocaleString()}
-Tipo de cambio: $${dolarOficial}`;
-}
+  return `Hola 👋
 
-function compartirWhatsApp(mensaje = ultimoMensaje) {
-  if (!mensaje) return;
-  window.open("https://wa.me/?text=" + encodeURIComponent(mensaje), "_blank");
+Te comparto el presupuesto para ${proyecto}.
+
+• Carga estimada: ${horas} horas de trabajo
+• Valor hora: USD ${tarifa}
+
+Inversión total: $${ars.toLocaleString()} ARS
+(Equivalente a USD ${usd.toFixed(2)} – TC $${dolarOficial})
+
+El presupuesto contempla las tareas definidas en el alcance acordado.
+Quedo atento para avanzar o realizar los ajustes necesarios.`;
 }
 
 /* ================= LISTA ================= */
