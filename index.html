@@ -9,32 +9,23 @@
 
 <style>
 
-/* ================= VARIABLES ================= */
-
 :root {
   --bg: #f5f5f5;
   --card: #ffffff;
-  --primary: #000000;
+  --primary: #000;
   --soft: #f0f0f0;
   --border: #e6e6e6;
-  --text: #111;
   --muted: #666;
 }
 
-/* ================= BASE ================= */
-
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
-  color: var(--text);
+  color: #111;
 }
-
-/* ================= LAYOUT ================= */
 
 .wrapper {
   min-height: 100vh;
@@ -56,8 +47,6 @@ body {
   box-shadow: 0 15px 45px rgba(0,0,0,0.05);
 }
 
-/* ================= TYPO ================= */
-
 h1 {
   font-size: 22px;
   margin: 0 0 10px 0;
@@ -69,9 +58,7 @@ h1 {
   margin-bottom: 25px;
 }
 
-/* ================= INPUTS ================= */
-
-input {
+input, select {
   width: 100%;
   padding: 14px;
   border-radius: 14px;
@@ -81,13 +68,11 @@ input {
   background: #fafafa;
 }
 
-input:focus {
+input:focus, select:focus {
   outline: none;
   border-color: black;
   background: white;
 }
-
-/* ================= BUTTONS ================= */
 
 button {
   width: 100%;
@@ -100,33 +85,19 @@ button {
   transition: all 0.2s ease;
 }
 
-.primary {
-  background: black;
-  color: white;
-}
+.primary { background: black; color: white; }
+.primary:hover { opacity: 0.9; }
 
-.primary:hover {
-  opacity: 0.9;
-}
+.secondary { background: var(--soft); margin-top: 10px; }
+.secondary:hover { background: #e5e5e5; }
 
-.secondary {
-  background: var(--soft);
-  margin-top: 10px;
-}
-
-.secondary:hover {
-  background: #e5e5e5;
-}
-
-/* ================= RESULT ================= */
+.whatsapp { background: #25D366; color: white; margin-top: 10px; }
 
 #resultado {
   margin-top: 20px;
   font-size: 22px;
   font-weight: bold;
 }
-
-/* ================= LISTA ================= */
 
 .presupuesto-item {
   background: var(--soft);
@@ -136,25 +107,17 @@ button {
   font-size: 14px;
 }
 
-/* ================= LOGIN ================= */
-
-.login-title {
-  font-size: 24px;
-  margin-bottom: 10px;
+.presupuesto-actions {
+  margin-top: 8px;
 }
 
-.login-sub {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 25px;
-}
+.login-title { font-size: 24px; margin-bottom: 10px; }
+.login-sub { font-size: 14px; color: var(--muted); margin-bottom: 25px; }
 
 </style>
 </head>
 
 <body>
-
-<!-- ================= APP ================= -->
 
 <div id="app" style="display:none;">
   <div class="wrapper">
@@ -165,16 +128,27 @@ button {
         <div class="sub" id="dolarInfo">Consultando dólar...</div>
 
         <input type="text" id="proyecto" placeholder="Nombre del proyecto">
+
+        <select id="tipoServicio" onchange="actualizarTarifa()">
+          <option value="15">Hora RUSC (USD 15/h)</option>
+          <option value="manual">Arquitectura (valor manual)</option>
+        </select>
+
+        <div id="tarifaManualContainer" style="display:none;">
+          <input type="number" id="valorManual" placeholder="Valor hora USD">
+        </div>
+
         <input type="number" id="horas" placeholder="Cantidad de horas">
 
         <button class="primary" onclick="calcular()">Calcular y Guardar</button>
+        <button class="whatsapp" onclick="compartirWhatsApp()">Enviar último por WhatsApp</button>
         <button class="secondary" onclick="exportarCSV()">Exportar CSV</button>
+        <button class="secondary" onclick="limpiarHistorial()">Limpiar historial</button>
         <button class="secondary" onclick="logout()">Cerrar sesión</button>
 
         <div id="resultado"></div>
 
         <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
-
         <div id="listaPresupuestos"></div>
 
       </div>
@@ -184,23 +158,20 @@ button {
 
 <script>
 
-/* ================= SUPABASE ================= */
-
 const supabaseClient = window.supabase.createClient(
   "https://mlsohmuytfohyvlxmqbu.supabase.co",
   "sb_publishable_cX6AE13szU4BDs4co4bEOA_VG_Xq6iA"
 );
 
 let dolarOficial = 0;
+let ultimoMensaje = "";
 
 /* ================= INIT ================= */
 
 async function init() {
   const { data } = await supabaseClient.auth.getSession();
-
-  if (!data.session) {
-    mostrarLogin();
-  } else {
+  if (!data.session) mostrarLogin();
+  else {
     document.getElementById("app").style.display = "block";
     obtenerDolar();
     cargarPresupuestos();
@@ -216,10 +187,8 @@ function mostrarLogin() {
         <div class="card">
           <div class="login-title">RUSC Admin</div>
           <div class="login-sub">Acceso privado</div>
-
           <input id="email" placeholder="Email">
           <input id="password" type="password" placeholder="Password">
-
           <button class="primary" onclick="login()">Ingresar</button>
         </div>
       </div>
@@ -230,17 +199,9 @@ function mostrarLogin() {
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    alert("Credenciales incorrectas");
-  } else {
-    location.reload();
-  }
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) alert("Credenciales incorrectas");
+  else location.reload();
 }
 
 async function logout() {
@@ -258,81 +219,12 @@ async function obtenerDolar() {
     "Dólar oficial (venta): $" + dolarOficial;
 }
 
-/* ================= GUARDAR ================= */
+/* ================= TARIFA ================= */
 
-async function guardarEnSupabase(proyecto, horas, tarifa, totalUSD, totalARS) {
-
-  const { error } = await supabaseClient
-    .from("presupuestos")
-    .insert([
-      {
-        proyecto,
-        horas,
-        tarifa,
-        total_usd: totalUSD,
-        total_ars: totalARS,
-        estado: "enviado"
-      }
-    ]);
-
-  if (error) {
-    alert("Error guardando");
-    console.error(error);
-  } else {
-    cargarPresupuestos();
-  }
-}
-
-/* ================= CARGAR ================= */
-
-async function cargarPresupuestos() {
-
-  const { data, error } = await supabaseClient
-    .from("presupuestos")
-    .select("*")
-    .order("fecha", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  const contenedor = document.getElementById("listaPresupuestos");
-  contenedor.innerHTML = "";
-
-  data.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "presupuesto-item";
-    div.innerHTML = `
-      <strong>${p.proyecto}</strong><br>
-      ${p.horas} hs<br>
-      Total ARS: $${Number(p.total_ars).toLocaleString()}
-    `;
-    contenedor.appendChild(div);
-  });
-}
-
-/* ================= CSV ================= */
-
-async function exportarCSV() {
-
-  const { data } = await supabaseClient
-    .from("presupuestos")
-    .select("*");
-
-  let csv = "Proyecto,Horas,Total USD,Total ARS,Fecha\n";
-
-  data.forEach(p => {
-    csv += `${p.proyecto},${p.horas},${p.total_usd},${p.total_ars},${p.fecha}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "presupuestos_rusc.csv";
-  a.click();
+function actualizarTarifa() {
+  const tipo = document.getElementById("tipoServicio").value;
+  document.getElementById("tarifaManualContainer").style.display =
+    tipo === "manual" ? "block" : "none";
 }
 
 /* ================= CALCULAR ================= */
@@ -341,9 +233,15 @@ async function calcular() {
 
   const proyecto = document.getElementById("proyecto").value;
   const horas = parseFloat(document.getElementById("horas").value);
-  const tarifa = 15;
+  let tarifa = document.getElementById("tipoServicio").value;
 
-  if (!proyecto || !horas) {
+  if (tarifa === "manual") {
+    tarifa = parseFloat(document.getElementById("valorManual").value);
+  } else {
+    tarifa = parseFloat(tarifa);
+  }
+
+  if (!proyecto || !horas || !tarifa) {
     alert("Completar datos");
     return;
   }
@@ -354,7 +252,99 @@ async function calcular() {
   document.getElementById("resultado").innerHTML =
     "Total ARS: $" + totalARS.toLocaleString();
 
-  await guardarEnSupabase(proyecto, horas, tarifa, totalUSD, totalARS);
+  ultimoMensaje = generarMensaje(proyecto, horas, tarifa, totalUSD, totalARS);
+
+  await supabaseClient.from("presupuestos").insert([
+    { proyecto, horas, tarifa, total_usd: totalUSD, total_ars: totalARS, estado: "enviado" }
+  ]);
+
+  cargarPresupuestos();
+}
+
+/* ================= MENSAJE ================= */
+
+function generarMensaje(proyecto, horas, tarifa, usd, ars) {
+  return `Presupuesto RUSC
+Proyecto: ${proyecto}
+Horas: ${horas}
+Tarifa: USD ${tarifa}/h
+Total: USD ${usd.toFixed(2)}
+Total ARS: $${ars.toLocaleString()}
+Tipo de cambio: $${dolarOficial}`;
+}
+
+function compartirWhatsApp(mensaje = ultimoMensaje) {
+  if (!mensaje) return;
+  window.open("https://wa.me/?text=" + encodeURIComponent(mensaje), "_blank");
+}
+
+/* ================= LISTA ================= */
+
+async function cargarPresupuestos() {
+
+  const { data } = await supabaseClient
+    .from("presupuestos")
+    .select("*")
+    .order("fecha", { ascending: false });
+
+  const contenedor = document.getElementById("listaPresupuestos");
+  contenedor.innerHTML = "";
+
+  data.forEach(p => {
+
+    const div = document.createElement("div");
+    div.className = "presupuesto-item";
+
+    const mensaje = generarMensaje(
+      p.proyecto,
+      p.horas,
+      p.tarifa,
+      p.total_usd,
+      p.total_ars
+    );
+
+    div.innerHTML = `
+      <strong>${p.proyecto}</strong><br>
+      ${p.horas} hs<br>
+      Total ARS: $${Number(p.total_ars).toLocaleString()}
+      <div class="presupuesto-actions">
+        <button class="whatsapp" onclick='compartirWhatsApp(${JSON.stringify(mensaje)})'>
+          Enviar por WhatsApp
+        </button>
+      </div>
+    `;
+
+    contenedor.appendChild(div);
+  });
+}
+
+/* ================= CSV ================= */
+
+async function exportarCSV() {
+  const { data } = await supabaseClient.from("presupuestos").select("*");
+
+  let csv = "Proyecto,Horas,Tarifa,Total USD,Total ARS,Fecha\n";
+
+  data.forEach(p => {
+    csv += `${p.proyecto},${p.horas},${p.tarifa},${p.total_usd},${p.total_ars},${p.fecha}\n`;
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "presupuestos_rusc.csv";
+  a.click();
+}
+
+/* ================= LIMPIAR ================= */
+
+async function limpiarHistorial() {
+  if (!confirm("¿Seguro que querés borrar todos los presupuestos?")) return;
+
+  await supabaseClient.from("presupuestos").delete().neq("id", "");
+
+  cargarPresupuestos();
 }
 
 init();
