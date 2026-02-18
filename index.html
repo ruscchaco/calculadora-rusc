@@ -3,47 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presupuesto Rusc - Admin</title>
+<title>RUSC Admin</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #f5f5f5;
-  margin: 0;
-  color: #111;
+
+/* ================= VARIABLES ================= */
+
+:root {
+  --bg: #f5f5f5;
+  --card: #ffffff;
+  --primary: #000000;
+  --soft: #f0f0f0;
+  --border: #e6e6e6;
+  --text: #111;
+  --muted: #666;
 }
 
-.container {
-  max-width: 500px;
-  margin: 40px auto;
+/* ================= BASE ================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ================= LAYOUT ================= */
+
+.wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
 }
 
-.card {
-  background: white;
-  padding: 25px;
-  border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.06);
+.container {
+  width: 100%;
+  max-width: 520px;
 }
 
-input, select {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
+.card {
+  background: var(--card);
+  padding: 28px;
+  border-radius: 24px;
+  box-shadow: 0 15px 45px rgba(0,0,0,0.05);
 }
+
+/* ================= TYPO ================= */
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 10px 0;
+}
+
+.sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 25px;
+}
+
+/* ================= INPUTS ================= */
+
+input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  font-size: 15px;
+  margin-bottom: 15px;
+  background: #fafafa;
+}
+
+input:focus {
+  outline: none;
+  border-color: black;
+  background: white;
+}
+
+/* ================= BUTTONS ================= */
 
 button {
   width: 100%;
-  padding: 14px;
-  margin-top: 15px;
-  border-radius: 12px;
+  padding: 15px;
+  border-radius: 16px;
   border: none;
+  font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
-  font-weight: bold;
+  transition: all 0.2s ease;
 }
 
 .primary {
@@ -51,53 +105,86 @@ button {
   color: white;
 }
 
-.secondary {
-  background: #eee;
+.primary:hover {
+  opacity: 0.9;
 }
+
+.secondary {
+  background: var(--soft);
+  margin-top: 10px;
+}
+
+.secondary:hover {
+  background: #e5e5e5;
+}
+
+/* ================= RESULT ================= */
 
 #resultado {
   margin-top: 20px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
 }
 
+/* ================= LISTA ================= */
+
 .presupuesto-item {
-  background: #fafafa;
-  padding: 12px;
-  border-radius: 10px;
-  margin-top: 10px;
+  background: var(--soft);
+  padding: 14px;
+  border-radius: 16px;
+  margin-top: 12px;
+  font-size: 14px;
 }
+
+/* ================= LOGIN ================= */
+
+.login-title {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.login-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 25px;
+}
+
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN SE RENDERIZA DINÁMICAMENTE -->
+<!-- ================= APP ================= -->
 
 <div id="app" style="display:none;">
-  <div class="container">
-    <div class="card">
+  <div class="wrapper">
+    <div class="container">
+      <div class="card">
 
-      <h2>Presupuesto Rusc - Admin</h2>
-      <p id="dolarInfo">Consultando dólar...</p>
+        <h1>Presupuesto RUSC – Admin</h1>
+        <div class="sub" id="dolarInfo">Consultando dólar...</div>
 
-      <input type="text" id="proyecto" placeholder="Nombre del proyecto">
-      <input type="number" id="horas" placeholder="Cantidad de horas">
+        <input type="text" id="proyecto" placeholder="Nombre del proyecto">
+        <input type="number" id="horas" placeholder="Cantidad de horas">
 
-      <button class="primary" onclick="calcular()">Calcular y Guardar</button>
-      <button class="secondary" onclick="exportarCSV()">Exportar CSV</button>
-      <button class="secondary" onclick="logout()">Cerrar sesión</button>
+        <button class="primary" onclick="calcular()">Calcular y Guardar</button>
+        <button class="secondary" onclick="exportarCSV()">Exportar CSV</button>
+        <button class="secondary" onclick="logout()">Cerrar sesión</button>
 
-      <div id="resultado"></div>
+        <div id="resultado"></div>
 
-      <hr>
-      <div id="listaPresupuestos"></div>
+        <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
 
+        <div id="listaPresupuestos"></div>
+
+      </div>
     </div>
   </div>
 </div>
 
 <script>
+
+/* ================= SUPABASE ================= */
 
 const supabaseClient = window.supabase.createClient(
   "https://mlsohmuytfohyvlxmqbu.supabase.co",
@@ -106,7 +193,7 @@ const supabaseClient = window.supabase.createClient(
 
 let dolarOficial = 0;
 
-/* ================= AUTH ================= */
+/* ================= INIT ================= */
 
 async function init() {
   const { data } = await supabaseClient.auth.getSession();
@@ -120,13 +207,22 @@ async function init() {
   }
 }
 
+/* ================= LOGIN ================= */
+
 function mostrarLogin() {
   document.body.innerHTML = `
-    <div style="max-width:400px;margin:100px auto;font-family:sans-serif;">
-      <h2>Login Admin</h2>
-      <input id="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;">
-      <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;">
-      <button onclick="login()" style="width:100%;padding:10px;">Ingresar</button>
+    <div class="wrapper">
+      <div class="container">
+        <div class="card">
+          <div class="login-title">RUSC Admin</div>
+          <div class="login-sub">Acceso privado</div>
+
+          <input id="email" placeholder="Email">
+          <input id="password" type="password" placeholder="Password">
+
+          <button class="primary" onclick="login()">Ingresar</button>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -141,7 +237,7 @@ async function login() {
   });
 
   if (error) {
-    alert("Error login");
+    alert("Credenciales incorrectas");
   } else {
     location.reload();
   }
