@@ -9,6 +9,8 @@
 
 <style>
 
+/* ================= VARIABLES ================= */
+
 :root {
   --bg: #f5f5f5;
   --card: #ffffff;
@@ -86,11 +88,7 @@ button {
 }
 
 .primary { background: black; color: white; }
-.primary:hover { opacity: 0.9; }
-
 .secondary { background: var(--soft); margin-top: 10px; }
-.secondary:hover { background: #e5e5e5; }
-
 .whatsapp { background: #25D366; color: white; margin-top: 10px; }
 
 #resultado {
@@ -108,7 +106,7 @@ button {
 }
 
 .presupuesto-actions {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .login-title { font-size: 24px; margin-bottom: 10px; }
@@ -118,6 +116,8 @@ button {
 </head>
 
 <body>
+
+<!-- ================= APP ================= -->
 
 <div id="app" style="display:none;">
   <div class="wrapper">
@@ -157,6 +157,8 @@ button {
 </div>
 
 <script>
+
+/* ================= SUPABASE ================= */
 
 const supabaseClient = window.supabase.createClient(
   "https://mlsohmuytfohyvlxmqbu.supabase.co",
@@ -227,6 +229,33 @@ function actualizarTarifa() {
     tipo === "manual" ? "block" : "none";
 }
 
+/* ================= MENSAJE ================= */
+
+function generarMensaje(proyecto, horas, tarifa, usd, ars) {
+  return `Hola 👋
+
+Te comparto el presupuesto para ${proyecto}.
+
+• Carga estimada: ${horas} horas
+• Valor hora: USD ${tarifa}
+
+Inversión total: $${ars.toLocaleString()} ARS
+(Equivalente a USD ${usd.toFixed(2)} – TC $${dolarOficial})
+
+Quedo atento para avanzar o realizar los ajustes necesarios.`;
+}
+
+/* ================= WHATSAPP ================= */
+
+function compartirWhatsApp(mensaje = ultimoMensaje) {
+  if (!mensaje || mensaje.trim() === "") {
+    alert("No hay mensaje para enviar.");
+    return;
+  }
+  const url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(mensaje);
+  window.open(url, "_blank");
+}
+
 /* ================= CALCULAR ================= */
 
 async function calcular() {
@@ -261,23 +290,6 @@ async function calcular() {
   cargarPresupuestos();
 }
 
-/* ================= MENSAJE ================= */
-
-function generarMensaje(proyecto, horas, tarifa, usd, ars) {
-  return `Hola 👋
-
-Te comparto el presupuesto para ${proyecto}.
-
-• Carga estimada: ${horas} horas de trabajo
-• Valor hora: USD ${tarifa}
-
-Inversión total: $${ars.toLocaleString()} ARS
-(Equivalente a USD ${usd.toFixed(2)} – TC $${dolarOficial})
-
-El presupuesto contempla las tareas definidas en el alcance acordado.
-Quedo atento para avanzar o realizar los ajustes necesarios.`;
-}
-
 /* ================= LISTA ================= */
 
 async function cargarPresupuestos() {
@@ -307,12 +319,18 @@ async function cargarPresupuestos() {
       <strong>${p.proyecto}</strong><br>
       ${p.horas} hs<br>
       Total ARS: $${Number(p.total_ars).toLocaleString()}
-      <div class="presupuesto-actions">
-        <button class="whatsapp" onclick='compartirWhatsApp(${JSON.stringify(mensaje)})'>
-          Enviar por WhatsApp
-        </button>
-      </div>
     `;
+
+    const acciones = document.createElement("div");
+    acciones.className = "presupuesto-actions";
+
+    const btn = document.createElement("button");
+    btn.className = "whatsapp";
+    btn.innerText = "Enviar por WhatsApp";
+    btn.onclick = () => compartirWhatsApp(mensaje);
+
+    acciones.appendChild(btn);
+    div.appendChild(acciones);
 
     contenedor.appendChild(div);
   });
@@ -322,13 +340,10 @@ async function cargarPresupuestos() {
 
 async function exportarCSV() {
   const { data } = await supabaseClient.from("presupuestos").select("*");
-
   let csv = "Proyecto,Horas,Tarifa,Total USD,Total ARS,Fecha\n";
-
   data.forEach(p => {
     csv += `${p.proyecto},${p.horas},${p.tarifa},${p.total_usd},${p.total_ars},${p.fecha}\n`;
   });
-
   const blob = new Blob([csv], { type: "text/csv" });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -340,23 +355,11 @@ async function exportarCSV() {
 /* ================= LIMPIAR ================= */
 
 async function limpiarHistorial() {
-
   const confirmar = confirm("¿Seguro que querés borrar todos los presupuestos?");
   if (!confirmar) return;
 
-  const { error } = await supabaseClient
-    .from("presupuestos")
-    .delete()
-    .not("id", "is", null);
-
-  if (error) {
-    alert("Error al borrar historial");
-    console.error(error);
-  } else {
-    alert("Historial eliminado correctamente");
-    cargarPresupuestos();
-  }
-  
+  await supabaseClient.from("presupuestos").delete().not("id", "is", null);
+  cargarPresupuestos();
 }
 
 init();
