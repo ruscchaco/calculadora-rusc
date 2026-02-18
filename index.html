@@ -340,11 +340,23 @@ async function exportarCSV() {
 /* ================= LIMPIAR ================= */
 
 async function limpiarHistorial() {
-  if (!confirm("¿Seguro que querés borrar todos los presupuestos?")) return;
 
-  await supabaseClient.from("presupuestos").delete().neq("id", "");
+  const confirmar = confirm("¿Seguro que querés borrar todos los presupuestos?");
+  if (!confirmar) return;
 
-  cargarPresupuestos();
+  const { error } = await supabaseClient
+    .from("presupuestos")
+    .delete()
+    .not("id", "is", null);
+
+  if (error) {
+    alert("Error al borrar historial");
+    console.error(error);
+  } else {
+    alert("Historial eliminado correctamente");
+    cargarPresupuestos();
+  }
+  
 }
 
 init();
