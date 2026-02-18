@@ -5,13 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presupuesto Rusc - Horas</title>
 
-<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-
-/* ================= BASE ================= */
-
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #f5f5f5;
@@ -78,7 +74,6 @@ input:focus, select:focus {
   outline: none;
   border-color: black;
   background: white;
-  color: #111;
 }
 
 button {
@@ -90,16 +85,8 @@ button {
   border: none;
   border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.primary-btn {
   background: black;
   color: white;
-}
-
-.primary-btn:hover {
-  opacity: 0.9;
 }
 
 .resultado {
@@ -117,10 +104,14 @@ button {
   transform: translateY(0);
 }
 
-/* ============== DARK MODE ============== */
+.presupuesto-item {
+  background: #f0f0f0;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
 
 @media (prefers-color-scheme: dark) {
-
   body {
     background-color: #0e0e0e;
     color: #f5f5f5;
@@ -128,26 +119,23 @@ button {
 
   .card {
     background: #1a1a1a;
-    box-shadow: none;
   }
 
   input, select {
-    background: #222 !important;
+    background: #222;
     border: 1px solid #333;
-    color: #f5f5f5 !important;
+    color: #f5f5f5;
   }
 
-  input:focus, select:focus {
-    background: #222 !important;
-    color: #ffffff !important;
+  button {
+    background: white;
+    color: black;
   }
 
-  .primary-btn {
-    background: #ffffff;
-    color: #000000;
+  .presupuesto-item {
+    background: #2a2a2a;
   }
 }
-
 </style>
 </head>
 
@@ -170,7 +158,7 @@ button {
 <input type="text" id="proyecto" placeholder="Ej: Vivienda Familiar - Resistencia">
 
 <label>Tipo de servicio</label>
-<select id="tipoServicio" onchange="actualizarTarifa()">
+<select id="tipoServicio">
   <option value="15">Hora Rusc (USD 15/h)</option>
   <option value="manual">Arquitectura (valor manual)</option>
 </select>
@@ -183,9 +171,14 @@ button {
 <label>Cantidad de horas</label>
 <input type="number" id="horas" placeholder="Ej: 30">
 
-<button class="primary-btn" onclick="calcular()">Calcular y guardar</button>
+<button onclick="calcular()">Calcular y guardar</button>
 
 <div class="resultado" id="resultado"></div>
+
+<hr style="margin:40px 0; opacity:0.2;">
+
+<h3>Presupuestos guardados</h3>
+<div id="listaPresupuestos"></div>
 
 </div>
 </div>
@@ -196,12 +189,8 @@ button {
 
 const supabaseClient = window.supabase.createClient(
   "https://mlsohmuytfohyvlxmqbu.supabase.co",
-  "TU_PUBLIC_KEY_AQUI"
+  "sb_publishable_cX6AE13szU4BDs4co4bEOA_VG_Xq6iA"
 );
-
-console.log("Supabase conectado correctamente:", supabaseClient);
-
-/* ================= APP ================= */
 
 let dolarOficial = 0;
 
@@ -218,21 +207,15 @@ async function obtenerDolar() {
   }
 }
 
-function actualizarTarifa() {
-  const tipo = document.getElementById("tipoServicio").value;
-  document.getElementById("tarifaManualContainer").style.display =
-    tipo === "manual" ? "block" : "none";
-}
-
 async function guardarEnSupabase(proyecto, horas, tarifa, totalUSD, totalARS) {
 
-  const { data, error } = await supabaseClient
+  const { error } = await supabaseClient
     .from("presupuestos")
     .insert([
       {
-        proyecto: proyecto,
-        horas: horas,
-        tarifa: tarifa,
+        proyecto,
+        horas,
+        tarifa,
         total_usd: totalUSD,
         total_ars: totalARS,
         estado: "enviado"
@@ -240,16 +223,47 @@ async function guardarEnSupabase(proyecto, horas, tarifa, totalUSD, totalARS) {
     ]);
 
   if (error) {
-    console.error("Error guardando:", error);
-    alert("Error guardando en base de datos. Revisar RLS.");
+    alert("Error guardando en base de datos.");
+    console.error(error);
   } else {
-    console.log("Guardado correctamente:", data);
+    cargarPresupuestos();
   }
+}
+
+async function cargarPresupuestos() {
+
+  const { data, error } = await supabaseClient
+    .from("presupuestos")
+    .select("*")
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const contenedor = document.getElementById("listaPresupuestos");
+  contenedor.innerHTML = "";
+
+  data.forEach(p => {
+
+    const div = document.createElement("div");
+    div.className = "presupuesto-item";
+
+    div.innerHTML = `
+      <strong>${p.proyecto}</strong><br>
+      ${p.horas} hs — USD ${p.total_usd}<br>
+      Total ARS: $${Number(p.total_ars).toLocaleString()}
+    `;
+
+    contenedor.appendChild(div);
+  });
 }
 
 async function calcular() {
 
   const proyecto = document.getElementById("proyecto").value;
+  const horas = parseFloat(document.getElementById("horas").value);
   let tarifa = document.getElementById("tipoServicio").value;
 
   if (tarifa === "manual") {
@@ -258,10 +272,8 @@ async function calcular() {
     tarifa = parseFloat(tarifa);
   }
 
-  const horas = parseFloat(document.getElementById("horas").value);
-
-  if (!horas || !tarifa || dolarOficial === 0) {
-    alert("Completar todos los campos correctamente.");
+  if (!proyecto || !horas || !tarifa) {
+    alert("Completar todos los campos.");
     return;
   }
 
@@ -278,6 +290,7 @@ async function calcular() {
 }
 
 obtenerDolar();
+cargarPresupuestos();
 
 </script>
 
