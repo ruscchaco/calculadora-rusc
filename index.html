@@ -10,33 +10,58 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #f2f2f2;
   margin: 0;
-  padding: 20px;
 }
+
+/* HEADER */
+
+.header {
+  background: black;
+  padding: 20px;
+  text-align: center;
+}
+
+.header img {
+  height: 40px;
+}
+
+/* LAYOUT */
 
 .container {
-  background: white;
-  padding: 25px;
+  padding: 20px;
   max-width: 500px;
   margin: auto;
-  border-radius: 14px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
 }
 
-h1 { font-size: 24px; margin-top: 0; }
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
 
-.sub { font-size: 14px; color: #666; margin-bottom: 20px; }
+h1 {
+  font-size: 18px;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.sub {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 15px;
+}
 
 label {
   font-weight: 600;
   display: block;
-  margin-bottom: 8px;
-  margin-top: 20px;
+  margin-bottom: 6px;
+  margin-top: 15px;
 }
 
 input, select {
   width: 100%;
-  padding: 14px;
-  font-size: 15px;
+  padding: 12px;
+  font-size: 14px;
   border-radius: 10px;
   border: 1px solid #ddd;
   box-sizing: border-box;
@@ -44,29 +69,32 @@ input, select {
 
 button {
   width: 100%;
-  padding: 16px;
-  margin-top: 20px;
-  font-size: 16px;
+  padding: 14px;
+  margin-top: 15px;
+  font-size: 15px;
   font-weight: 600;
-  background-color: black;
-  color: white;
   border: none;
   border-radius: 12px;
   cursor: pointer;
 }
 
+.primary-btn {
+  background-color: black;
+  color: white;
+}
+
 .share-btn {
   background-color: #25D366;
-  margin-top: 10px;
+  color: white;
 }
 
 .resultado {
-  margin-top: 25px;
-  font-size: 20px;
+  margin-top: 20px;
+  font-size: 18px;
   font-weight: bold;
   opacity: 0;
   transform: translateY(10px);
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
 }
 
 .resultado.show {
@@ -74,36 +102,46 @@ button {
   transform: translateY(0);
 }
 
-.usd { font-size: 15px; font-weight: normal; color: #666; }
+/* HISTORIAL */
 
 .historial {
-  margin-top: 35px;
-  border-top: 1px solid #eee;
-  padding-top: 20px;
+  margin-top: 30px;
 }
 
 .historial-item {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
   font-size: 13px;
-  margin-bottom: 6px;
-  color: #444;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.historial-actions {
+  margin-top: 8px;
+}
+
+.historial-actions button {
+  font-size: 12px;
+  padding: 6px;
 }
 
 .clear-btn {
-  margin-top: 10px;
   background: #eee;
   color: #333;
-  font-size: 13px;
-  padding: 8px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
+<div class="header">
+  <img src="logo.png" alt="RUSC Logo">
+</div>
+
 <div class="container">
+
+<div class="card">
 
 <h1>Presupuesto Rusc - Horas</h1>
 
@@ -112,28 +150,28 @@ button {
 </div>
 
 <label>Nombre del proyecto</label>
-<input type="text" id="proyecto" placeholder="Ej: Branding Clínica Norte">
+<input type="text" id="proyecto" placeholder="Ej: Vivienda Familiar - Resistencia">
 
 <label>Tipo de servicio</label>
 <select id="tipoServicio" onchange="actualizarTarifa()">
-  <option value="15">Consultoría estratégica (USD 15)</option>
-  <option value="18">Branding (USD 18)</option>
+  <option value="15">Hora Rusc (USD 15/h)</option>
   <option value="manual">Arquitectura (valor manual)</option>
-  <option value="manual2">Personalizado</option>
 </select>
 
 <div id="tarifaManualContainer" style="display:none;">
   <label>Valor hora (USD)</label>
-  <input type="number" id="valorManual" placeholder="Ej: 22">
+  <input type="number" id="valorManual" placeholder="Ej: 25">
 </div>
 
 <label>Cantidad de horas</label>
 <input type="number" id="horas" placeholder="Ej: 30">
 
-<button onclick="calcular()">Calcular</button>
-<button class="share-btn" onclick="compartirWhatsApp()">Compartir por WhatsApp</button>
+<button class="primary-btn" onclick="calcular()">Calcular</button>
+<button class="share-btn" onclick="compartirWhatsApp()">Enviar último presupuesto</button>
 
 <div class="resultado" id="resultado"></div>
+
+</div>
 
 <div class="historial">
 <h3>Historial (este dispositivo)</h3>
@@ -163,71 +201,64 @@ async function obtenerDolar() {
 
 function actualizarTarifa() {
   const tipo = document.getElementById("tipoServicio").value;
-  const container = document.getElementById("tarifaManualContainer");
+  document.getElementById("tarifaManualContainer").style.display =
+    tipo === "manual" ? "block" : "none";
+}
 
-  if (tipo.includes("manual")) {
-    container.style.display = "block";
-  } else {
-    container.style.display = "none";
-  }
+function generarMensaje(proyecto, horas, tarifa, totalUSD, totalARS) {
+  return `Presupuesto RUSC
+Proyecto: ${proyecto}
+Horas: ${horas}
+Tarifa: USD ${tarifa}/h
+Total: USD ${totalUSD.toFixed(2)}
+Total en ARS: $${totalARS.toLocaleString()}
+Tipo de cambio utilizado: $${dolarOficial}
+
+Válido al día de emisión.`;
 }
 
 function calcular() {
 
   const proyecto = document.getElementById("proyecto").value;
-  const tipo = document.getElementById("tipoServicio");
-  const tipoTexto = tipo.options[tipo.selectedIndex].text;
-  let valorHoraUSD = tipo.value;
+  let tarifa = document.getElementById("tipoServicio").value;
 
-  if (valorHoraUSD.includes("manual")) {
-    valorHoraUSD = parseFloat(document.getElementById("valorManual").value);
+  if (tarifa === "manual") {
+    tarifa = parseFloat(document.getElementById("valorManual").value);
   } else {
-    valorHoraUSD = parseFloat(valorHoraUSD);
+    tarifa = parseFloat(tarifa);
   }
 
   const horas = parseFloat(document.getElementById("horas").value);
-  if (!horas || !valorHoraUSD || dolarOficial === 0) return;
+  if (!horas || !tarifa || dolarOficial === 0) return;
 
-  const totalUSD = valorHoraUSD * horas;
+  const totalUSD = tarifa * horas;
   const totalARS = totalUSD * dolarOficial;
 
   const resultado = document.getElementById("resultado");
-  resultado.innerHTML =
-    "Total en ARS: $" + totalARS.toLocaleString() +
-    "<div class='usd'>USD: $" + totalUSD.toFixed(2) +
-    " | Tarifa: $" + valorHoraUSD + "</div>";
-
+  resultado.innerHTML = "Total ARS: $" + totalARS.toLocaleString();
   resultado.classList.remove("show");
   void resultado.offsetWidth;
   resultado.classList.add("show");
 
-  ultimoPresupuesto =
-`Presupuesto RUSC
-Proyecto: ${proyecto}
-Servicio: ${tipoTexto}
-Horas: ${horas}
-Tarifa: USD ${valorHoraUSD}
-Total: USD ${totalUSD.toFixed(2)}
-Total en ARS: $${totalARS.toLocaleString()}
-Tipo de cambio usado: $${dolarOficial}`;
+  ultimoPresupuesto = generarMensaje(proyecto, horas, tarifa, totalUSD, totalARS);
 
-  guardarEnHistorial(proyecto, tipoTexto, horas, totalARS);
+  guardarEnHistorial(proyecto, horas, tarifa, totalUSD, totalARS);
 }
 
-function compartirWhatsApp() {
-  if (!ultimoPresupuesto) return;
-  const url = "https://wa.me/?text=" + encodeURIComponent(ultimoPresupuesto);
-  window.open(url, "_blank");
+function compartirWhatsApp(mensaje = ultimoPresupuesto) {
+  if (!mensaje) return;
+  window.open("https://wa.me/?text=" + encodeURIComponent(mensaje), "_blank");
 }
 
-function guardarEnHistorial(proyecto, tipo, horas, ars) {
+function guardarEnHistorial(proyecto, horas, tarifa, usd, ars) {
   const historial = JSON.parse(localStorage.getItem("ruscHistorial")) || [];
 
   historial.unshift({
     fecha: new Date().toLocaleString(),
     proyecto,
-    tipo,
     horas,
+    tarifa,
+    usd,
     ars
   });
 
@@ -241,14 +272,31 @@ function renderHistorial() {
   lista.innerHTML = "";
 
   historial.slice(0, 10).forEach(item => {
+
     const div = document.createElement("div");
     div.className = "historial-item";
-    div.innerHTML =
-      item.fecha + " — " + item.proyecto +
-      " — " + item.horas + " hs → $" +
-      item.ars.toLocaleString();
+
+    div.innerHTML = `
+      <strong>${item.proyecto}</strong><br>
+      ${item.fecha} — ${item.horas} hs → $${item.ars.toLocaleString()}
+      <div class="historial-actions">
+        <button onclick="reenviar(${JSON.stringify(item).replace(/"/g, '&quot;')})">Reenviar</button>
+      </div>
+    `;
+
     lista.appendChild(div);
   });
+}
+
+function reenviar(item) {
+  const mensaje = generarMensaje(
+    item.proyecto,
+    item.horas,
+    item.tarifa,
+    item.usd,
+    item.ars
+  );
+  compartirWhatsApp(mensaje);
 }
 
 function limpiarHistorial() {
