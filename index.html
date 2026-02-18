@@ -14,10 +14,11 @@
 :root {
   --bg: #f5f5f5;
   --card: #ffffff;
-  --primary: #000;
   --soft: #f0f0f0;
   --border: #e6e6e6;
-  --muted: #666;
+  --muted: #777;
+  --danger: #ff4d4d;
+  --whatsapp: #25D366;
 }
 
 * { box-sizing: border-box; }
@@ -32,7 +33,6 @@ body {
 .wrapper {
   min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
   padding: 20px;
 }
@@ -70,26 +70,31 @@ input, select {
   background: #fafafa;
 }
 
-input:focus, select:focus {
-  outline: none;
-  border-color: black;
-  background: white;
-}
-
 button {
   width: 100%;
-  padding: 15px;
+  padding: 14px;
   border-radius: 16px;
   border: none;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  margin-top: 8px;
 }
 
 .primary { background: black; color: white; }
-.secondary { background: var(--soft); margin-top: 10px; }
-.whatsapp { background: #25D366; color: white; margin-top: 10px; }
+.whatsapp { background: var(--whatsapp); color: white; }
+.danger { background: var(--danger); color: white; font-size: 13px; padding: 10px; }
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 15px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
 
 #resultado {
   margin-top: 20px;
@@ -99,10 +104,9 @@ button {
 
 .presupuesto-item {
   background: var(--soft);
-  padding: 14px;
-  border-radius: 16px;
-  margin-top: 12px;
-  font-size: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  margin-top: 14px;
 }
 
 .presupuesto-actions {
@@ -116,8 +120,6 @@ button {
 </head>
 
 <body>
-
-<!-- ================= APP ================= -->
 
 <div id="app" style="display:none;">
   <div class="wrapper">
@@ -142,14 +144,20 @@ button {
 
         <button class="primary" onclick="calcular()">Calcular y Guardar</button>
         <button class="whatsapp" onclick="compartirWhatsApp()">Enviar último por WhatsApp</button>
-        <button class="secondary" onclick="exportarCSV()">Exportar CSV</button>
-        <button class="secondary" onclick="limpiarHistorial()">Limpiar historial</button>
-        <button class="secondary" onclick="logout()">Cerrar sesión</button>
 
         <div id="resultado"></div>
 
         <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
+
         <div id="listaPresupuestos"></div>
+
+        <button class="link-button" onclick="limpiarHistorial()">
+          Borrar todo el historial
+        </button>
+
+        <button class="link-button" onclick="logout()">
+          Cerrar sesión
+        </button>
 
       </div>
     </div>
@@ -324,38 +332,38 @@ async function cargarPresupuestos() {
     const acciones = document.createElement("div");
     acciones.className = "presupuesto-actions";
 
-    const btn = document.createElement("button");
-    btn.className = "whatsapp";
-    btn.innerText = "Enviar por WhatsApp";
-    btn.onclick = () => compartirWhatsApp(mensaje);
+    const btnWA = document.createElement("button");
+    btnWA.className = "whatsapp";
+    btnWA.innerText = "Enviar por WhatsApp";
+    btnWA.onclick = () => compartirWhatsApp(mensaje);
 
-    acciones.appendChild(btn);
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "danger";
+    btnDelete.innerText = "Eliminar";
+    btnDelete.onclick = () => eliminarPresupuesto(p.id);
+
+    acciones.appendChild(btnWA);
+    acciones.appendChild(btnDelete);
     div.appendChild(acciones);
 
     contenedor.appendChild(div);
   });
 }
 
-/* ================= CSV ================= */
+/* ================= ELIMINAR INDIVIDUAL ================= */
 
-async function exportarCSV() {
-  const { data } = await supabaseClient.from("presupuestos").select("*");
-  let csv = "Proyecto,Horas,Tarifa,Total USD,Total ARS,Fecha\n";
-  data.forEach(p => {
-    csv += `${p.proyecto},${p.horas},${p.tarifa},${p.total_usd},${p.total_ars},${p.fecha}\n`;
-  });
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "presupuestos_rusc.csv";
-  a.click();
+async function eliminarPresupuesto(id) {
+  const confirmar = confirm("¿Eliminar este presupuesto?");
+  if (!confirmar) return;
+
+  await supabaseClient.from("presupuestos").delete().eq("id", id);
+  cargarPresupuestos();
 }
 
-/* ================= LIMPIAR ================= */
+/* ================= BORRAR TODO ================= */
 
 async function limpiarHistorial() {
-  const confirmar = confirm("¿Seguro que querés borrar todos los presupuestos?");
+  const confirmar = confirm("¿Seguro que querés borrar TODO el historial?");
   if (!confirmar) return;
 
   await supabaseClient.from("presupuestos").delete().not("id", "is", null);
