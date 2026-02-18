@@ -5,14 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Presupuesto Rusc - Horas</title>
 
-<!-- SUPABASE CDN -->
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 
-/* =====================
-   BASE
-===================== */
+/* ================= BASE ================= */
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -20,10 +18,6 @@ body {
   margin: 0;
   color: #111;
 }
-
-/* =====================
-   HEADER
-===================== */
 
 .header {
   background: black;
@@ -35,10 +29,6 @@ body {
   height: 70px;
   max-width: 80%;
 }
-
-/* =====================
-   LAYOUT
-===================== */
 
 .container {
   max-width: 520px;
@@ -52,10 +42,6 @@ body {
   border-radius: 20px;
   box-shadow: 0 15px 35px rgba(0,0,0,0.06);
 }
-
-/* =====================
-   TEXT
-===================== */
 
 h1 {
   font-size: 20px;
@@ -77,10 +63,6 @@ label {
   margin-top: 18px;
 }
 
-/* =====================
-   INPUTS
-===================== */
-
 input, select {
   width: 100%;
   padding: 14px;
@@ -98,14 +80,6 @@ input:focus, select:focus {
   background: white;
   color: #111;
 }
-
-input::placeholder {
-  color: #999;
-}
-
-/* =====================
-   BUTTONS
-===================== */
 
 button {
   width: 100%;
@@ -128,11 +102,6 @@ button {
   opacity: 0.9;
 }
 
-.share-btn {
-  background: #25D366;
-  color: white;
-}
-
 .resultado {
   margin-top: 25px;
   font-size: 20px;
@@ -148,9 +117,7 @@ button {
   transform: translateY(0);
 }
 
-/* =====================
-   DARK MODE
-===================== */
+/* ============== DARK MODE ============== */
 
 @media (prefers-color-scheme: dark) {
 
@@ -168,7 +135,6 @@ button {
     background: #222 !important;
     border: 1px solid #333;
     color: #f5f5f5 !important;
-    -webkit-text-fill-color: #f5f5f5 !important;
   }
 
   input:focus, select:focus {
@@ -192,7 +158,6 @@ button {
 </div>
 
 <div class="container">
-
 <div class="card">
 
 <h1>Presupuesto Rusc - Horas</h1>
@@ -218,30 +183,25 @@ button {
 <label>Cantidad de horas</label>
 <input type="number" id="horas" placeholder="Ej: 30">
 
-<button class="primary-btn" onclick="calcular()">Calcular</button>
+<button class="primary-btn" onclick="calcular()">Calcular y guardar</button>
 
 <div class="resultado" id="resultado"></div>
 
 </div>
-
 </div>
 
 <script>
 
-/* =========================
-   SUPABASE CONEXIÓN CORRECTA
-========================= */
+/* ================= SUPABASE ================= */
 
 const supabaseClient = window.supabase.createClient(
   "https://mlsohmuytfohyvlxmqbu.supabase.co",
-  "sb_publishable_cX6AE13szU4BDs4co4bEOA_VG_Xq6iA"
+  "TU_PUBLIC_KEY_AQUI"
 );
 
 console.log("Supabase conectado correctamente:", supabaseClient);
 
-/* =========================
-   LÓGICA APP
-========================= */
+/* ================= APP ================= */
 
 let dolarOficial = 0;
 
@@ -264,7 +224,30 @@ function actualizarTarifa() {
     tipo === "manual" ? "block" : "none";
 }
 
-function calcular() {
+async function guardarEnSupabase(proyecto, horas, tarifa, totalUSD, totalARS) {
+
+  const { data, error } = await supabaseClient
+    .from("presupuestos")
+    .insert([
+      {
+        proyecto: proyecto,
+        horas: horas,
+        tarifa: tarifa,
+        total_usd: totalUSD,
+        total_ars: totalARS,
+        estado: "enviado"
+      }
+    ]);
+
+  if (error) {
+    console.error("Error guardando:", error);
+    alert("Error guardando en base de datos. Revisar RLS.");
+  } else {
+    console.log("Guardado correctamente:", data);
+  }
+}
+
+async function calcular() {
 
   const proyecto = document.getElementById("proyecto").value;
   let tarifa = document.getElementById("tipoServicio").value;
@@ -276,7 +259,11 @@ function calcular() {
   }
 
   const horas = parseFloat(document.getElementById("horas").value);
-  if (!horas || !tarifa || dolarOficial === 0) return;
+
+  if (!horas || !tarifa || dolarOficial === 0) {
+    alert("Completar todos los campos correctamente.");
+    return;
+  }
 
   const totalUSD = tarifa * horas;
   const totalARS = totalUSD * dolarOficial;
@@ -286,6 +273,8 @@ function calcular() {
   resultado.classList.remove("show");
   void resultado.offsetWidth;
   resultado.classList.add("show");
+
+  await guardarEnSupabase(proyecto, horas, tarifa, totalUSD, totalARS);
 }
 
 obtenerDolar();
@@ -294,4 +283,3 @@ obtenerDolar();
 
 </body>
 </html>
-
