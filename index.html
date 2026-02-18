@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RUSC Admin</title>
+<title>Presupuestador</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -21,6 +21,8 @@
   --whatsapp: #25D366;
 }
 
+/* ================= BASE ================= */
+
 * { box-sizing: border-box; }
 
 body {
@@ -28,10 +30,42 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: #111;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
+/* ================= HEADER ================= */
+
+.header {
+  background: white;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo svg {
+  width: 28px;
+  height: 28px;
+}
+
+.logo span {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+/* ================= LAYOUT ================= */
+
 .wrapper {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   justify-content: center;
   padding: 20px;
@@ -113,6 +147,17 @@ button {
   margin-top: 10px;
 }
 
+/* ================= FOOTER ================= */
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ================= LOGIN ================= */
+
 .login-title { font-size: 24px; margin-bottom: 10px; }
 .login-sub { font-size: 14px; color: var(--muted); margin-bottom: 25px; }
 
@@ -121,19 +166,32 @@ button {
 
 <body>
 
+<!-- ================= HEADER ================= -->
+
+<div class="header">
+  <div class="logo">
+    <!-- logo.svg -->
+    <svg viewBox="0 0 24 24" fill="black">
+      <circle cx="12" cy="12" r="10" fill="black"/>
+      <text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-family="Arial">R</text>
+    </svg>
+    <span>RUSC</span>
+  </div>
+</div>
+
 <div id="app" style="display:none;">
   <div class="wrapper">
     <div class="container">
       <div class="card">
 
-        <h1>Presupuesto RUSC – Admin</h1>
+        <h1>Presupuestador</h1>
         <div class="sub" id="dolarInfo">Consultando dólar...</div>
 
         <input type="text" id="proyecto" placeholder="Nombre del proyecto">
 
         <select id="tipoServicio" onchange="actualizarTarifa()">
-          <option value="15">Hora RUSC (USD 15/h)</option>
-          <option value="manual">Arquitectura (valor manual)</option>
+          <option value="15">Servicios por hora</option>
+          <option value="manual">Servicios de Arquitectura</option>
         </select>
 
         <div id="tarifaManualContainer" style="display:none;">
@@ -143,12 +201,11 @@ button {
         <input type="number" id="horas" placeholder="Cantidad de horas">
 
         <button class="primary" onclick="calcular()">Calcular y Guardar</button>
-        <button class="whatsapp" onclick="compartirWhatsApp()">Enviar último por WhatsApp</button>
+        <button class="whatsapp" onclick="compartirWhatsApp()">Enviar presupuesto</button>
 
         <div id="resultado"></div>
 
         <hr style="margin:25px 0;border:none;border-top:1px solid #eee;">
-
         <div id="listaPresupuestos"></div>
 
         <button class="link-button" onclick="limpiarHistorial()">
@@ -162,6 +219,12 @@ button {
       </div>
     </div>
   </div>
+</div>
+
+<!-- ================= FOOTER ================= -->
+
+<div class="footer">
+  created by Rusc.
 </div>
 
 <script>
@@ -195,7 +258,7 @@ function mostrarLogin() {
     <div class="wrapper">
       <div class="container">
         <div class="card">
-          <div class="login-title">RUSC Admin</div>
+          <div class="login-title">Presupuestador</div>
           <div class="login-sub">Acceso privado</div>
           <input id="email" placeholder="Email">
           <input id="password" type="password" placeholder="Password">
